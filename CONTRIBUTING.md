@@ -13,10 +13,10 @@ Following is are the relevant informations that you need to contribute to this p
 
 ## Code of conduct
 This project and everyone participating in it should obey to the [Code of Conduct](CODE_OF_CONDUCT.md). 
-Please report unacceptable behavior to intia@th-koeln.de](mailto:intia@th-koeln.de)
+Please report unacceptable behavior to [intia@th-koeln.de](mailto:intia@th-koeln.de)
 
 ## Important resources
-- [PDescription of the underlying research project](https://dites.web.th-koeln.de/forschung/projekte/research-projects-intia/)
+- [Description of the underlying research project](https://dites.web.th-koeln.de/forschung/projekte/research-projects-intia/)
 
 ## How can I contribute?
 There are many ways to contribute, from writing tutorials, blog posts, improving the documentation, 
