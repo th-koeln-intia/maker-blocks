@@ -1,5 +1,5 @@
-# Backlog
-Backlog for all open Issues of the research project INTIA.
+# Maker-Building-Blocks
+Every building block used by the INTIA project to prototype new solutions.
 
 ## INTIA
 *Inclusive Development of Methods and Technologies for Supporting Everyday Activities of Young People with Special Needs*
