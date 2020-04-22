@@ -134,8 +134,8 @@ void loop() {
 
   // Bestimme Aktion des Buttons und handle dementsprechend
   int b = checkButton();
-  if (b == 1) doc["action"] = "single-tap";
-  if (b == 2) doc["action"] = "double-tap";
+  if (b == 1) doc["action"] = "single-click";
+  if (b == 2) doc["action"] = "double-click";
   if (b == 3) doc["action"] = "hold";
   if (b == 4) doc["action"] = "long-hold";
 
