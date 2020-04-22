@@ -1,5 +1,14 @@
-// Dieses Skript sendet den State eines Buttons mit dauer wie lange dieser gedrückt wurde.
-// Zusätzlich gibt es eine LED die ebenfalls über MQTT gesteuert werden kann
+/* 4-Way Button:  Single-Click, Double-Click, Press+Hold, and Press+Long-Hold Test Sketch
+
+  To keep a physical interface as simple as possible, this sketch demonstrates generating four output events from a single push-button.
+    1) Single-Click:  rapid press and release
+    2) Double-Click:  two clicks in quick succession
+    3) Press and Hold:  holding the button down
+    4) Long Press and Hold:  holding the button for a long time 
+
+    Inspired by:
+      - https://forum.arduino.cc/index.php?topic=14479.0
+*/
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
@@ -25,9 +34,27 @@ const int ledPin =  D2;      // LED-Pin
 
 int buttonState = 1;         // Status des Buttons
 
-// Variabeln um die Zeit zu berechnen
-unsigned long startTime;
-unsigned long pressTime;
+//=================================================
+//  MULTI-CLICK:  One Button, Multiple Events
+
+// Button timing variables
+int debounce = 20;          // ms debounce period to prevent flickering when pressing or releasing the button
+int DCgap = 250;            // max ms between clicks for a double click event
+int holdTime = 1000;        // ms hold period: how long to wait for press+hold event
+int longHoldTime = 3000;    // ms long hold period: how long to wait for press+hold event
+
+// Button variables
+boolean buttonVal = HIGH;   // value read from button
+boolean buttonLast = HIGH;  // buffered value of the button's previous state
+boolean DCwaiting = false;  // whether we're waiting for a double click (down)
+boolean DConUp = false;     // whether to register a double click on next release, or whether to wait and click
+boolean singleOK = true;    // whether it's OK to do a single click
+long downTime = -1;         // time the button was pressed down
+long upTime = -1;           // time the button was released
+boolean ignoreUp = false;   // whether to ignore the button release because the click+hold was triggered
+boolean waitForUp = false;        // when held, whether to wait for the up event
+boolean holdEventPast = false;    // whether or not the hold event happened already
+boolean longHoldEventPast = false;// whether or not the long hold event happened already
 
 void setup() {
   pinMode(ledPin, OUTPUT);
@@ -96,64 +123,91 @@ void reconnect() {
   Serial.println("MQTT Connected...");
 }
 
-// ToDO: Die Buttonsteuerung in eine eigene Funktion packen.
 void loop() {
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
 
+  // Elemente werden an ein Json übergeben das später gesendet wird
+  doc["model"] = "DIY-BUTTON";
 
-  // Überprüfung ob der Zustand des Buttons sich geändert hat
-  if (buttonState != digitalRead(buttonPin)) {
+  // Bestimme Aktion des Buttons und handle dementsprechend
+  int b = checkButton();
+  if (b == 1) doc["action"] = "single-tap";
+  if (b == 2) doc["action"] = "double-tap";
+  if (b == 3) doc["action"] = "hold";
+  if (b == 4) doc["action"] = "long-hold";
 
-    //Butten ist nicht gedrückt. Die Zeit wird berechnet
-    if (digitalRead(buttonPin) == HIGH) {
-      pressTime = millis() - startTime;
-      buttonState = digitalRead(buttonPin);
-      digitalWrite(ledPin, LOW);
+  // Nachricht wird gepackt und an MQTT gesendet.
+  char message[256];
+  serializeJson(doc, message);
+  Serial.println(message);
+  if (b != 0) client.publish(TOPIC, message);  // wird nur an Broker gesendet, wenn etwas passiert
+}
 
-      // Elemente werden an ein Json übergeben das später gesendet wird
-      doc["button"] = "release";
-      doc["duration_ms"] = pressTime;
-      doc["duration_s"] = int(pressTime / 1000);
-
-      Serial.println(buttonState);
-      Serial.print("Time: ");
-      Serial.print(pressTime);
-      Serial.print(" milliseconds ");
-      Serial.print(int(pressTime / 1000));
-      Serial.println(" seconds");
-
-      startTime = millis(); // Timer wird "zurückgesetzt"
-
-      // Nachricht wird gepackt und an MQTT gesendet.
-      char message[256];
-      serializeJson(doc, message);
-      Serial.println(message);
-      client.publish(TOPIC, message);
-
-      delay(100); // Verzögerung um den Button zu entprellen
-
-    } else if (digitalRead(buttonPin) == LOW) {
-
-      startTime = millis(); // Setzt den Presstimmer zurück
-
-      buttonState = digitalRead(buttonPin);
-      // ToDo: in der Json stehen immer noch die alten Zeiten beim Drücken des Knopfes. Gehört nur in den Release-State
-      doc["button"] = "release";
-
-      // LED aus
-      buttonState = LOW;
-      Serial.println(buttonState);
-      digitalWrite(ledPin, HIGH);
-
-      char message[256];
-      serializeJson(doc, message);
-      Serial.println(message);
-      client.publish(TOPIC, message);
-
-      delay(100); // Verzögerung um den Button zu entprellen
-    }
-  }
+// Berechnet die Aktion eines Buttons
+int checkButton() {    
+   int event = 0;
+   buttonVal = digitalRead(buttonPin);
+   // Button pressed down
+   if (buttonVal == LOW && buttonLast == HIGH && (millis() - upTime) > debounce)
+   {
+       downTime = millis();
+       ignoreUp = false;
+       waitForUp = false;
+       singleOK = true;
+       holdEventPast = false;
+       longHoldEventPast = false;
+       if ((millis()-upTime) < DCgap && DConUp == false && DCwaiting == true)  DConUp = true;
+       else  DConUp = false;
+       DCwaiting = false;
+   }
+   // Button released
+   else if (buttonVal == HIGH && buttonLast == LOW && (millis() - downTime) > debounce)
+   {        
+       if (not ignoreUp)
+       {
+           upTime = millis();
+           if (DConUp == false) DCwaiting = true;
+           else
+           {
+               event = 2;
+               DConUp = false;
+               DCwaiting = false;
+               singleOK = false;
+           }
+       }
+   }
+   // Test for normal click event: DCgap expired
+   if ( buttonVal == HIGH && (millis()-upTime) >= DCgap && DCwaiting == true && DConUp == false && singleOK == true && event != 2)
+   {
+       event = 1;
+       DCwaiting = false;
+   }
+   // Test for hold
+   if (buttonVal == LOW && (millis() - downTime) >= holdTime) {
+       // Trigger "normal" hold
+       if (not holdEventPast)
+       {
+           event = 3;
+           waitForUp = true;
+           ignoreUp = true;
+           DConUp = false;
+           DCwaiting = false;
+           //downTime = millis();
+           holdEventPast = true;
+       }
+       // Trigger "long" hold
+       if ((millis() - downTime) >= longHoldTime)
+       {
+           if (not longHoldEventPast)
+           {
+               event = 4;
+               longHoldEventPast = true;
+           }
+       }
+   }
+   buttonLast = buttonVal;
+   return event;
 }
