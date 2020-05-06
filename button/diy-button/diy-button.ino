@@ -23,9 +23,6 @@ const char* SET = "/set";
 
 const char topicOption[80];
 
-const char* TOPIC_SUB = "/button/diy-button/set"; // Topic das Oboniert wird
-//Wird an dieses Topic "on" gesendet so geht die LED an. "off" zum aus schalten.
-
 WiFiClient espClient;
 PubSubClient client(espClient);
 
