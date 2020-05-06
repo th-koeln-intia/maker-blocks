@@ -29,8 +29,8 @@ PubSubClient client(espClient);
 const int capacity = JSON_OBJECT_SIZE(50);
 StaticJsonDocument<capacity> doc;
 
-const int buttonPin = D3;     // Button-Pin
-const int ledPin =  D2;      // LED-Pin
+const int buttonPin = D2;     // Button-Pin
+const int ledPin =  D3;      // LED-Pin
 
 int buttonState = 1;         // Status des Buttons
 
