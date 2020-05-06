@@ -19,6 +19,9 @@ const char* SSID = "intia";
 const char* PSK = "BuntesLicht10";
 const char* MQTT_BROKER = "openhabianpi.local";
 const char* TOPIC = "/button/diy-button"; // Topic an das gesendet wird
+const char* SET = "/set";
+
+const char topicOption[80];
 
 const char* TOPIC_SUB = "/button/diy-button/set"; // Topic das Oboniert wird
 //Wird an dieses Topic "on" gesendet so geht die LED an. "off" zum aus schalten.
@@ -59,7 +62,10 @@ boolean longHoldEventPast = false;// whether or not the long hold event happened
 void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(buttonPin, INPUT);
-  Serial.begin(115200);
+  Serial.begin(115200); 
+
+  strcpy(topicOption, "");
+  strcat(topicOption, TOPIC);
 
   setup_wifi();
   client.setServer(MQTT_BROKER, 1883);
@@ -119,7 +125,8 @@ void reconnect() {
       delay(5000);
     }
   }
-  client.subscribe(TOPIC_SUB);
+  strcat(topicOption, SET);
+  client.subscribe(topicOption);
   Serial.println("MQTT Connected...");
 }
 
