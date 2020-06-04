@@ -21,7 +21,7 @@ Dieses Device scant RFID-Chips und sendet den gespeicherten String an ein MQTT-T
 | IRQ		| -			|
 
 ## NodeRed-Example
-![enter image description here](mqtt_rfid_reader_nodered.jpg)
+![enter image description here](rfid_reader_nodered.jpg)
 
     [
     {
@@ -337,4 +337,4 @@ Dieses Device scant RFID-Chips und sendet den gespeicherten String an ein MQTT-T
         "willPayload": ""
     }
     ]
-[Download](mqtt_rfid_reader_nodered.json)
+[Download](rfid_reader_nodered.json)
