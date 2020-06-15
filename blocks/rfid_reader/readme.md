@@ -1,6 +1,6 @@
 
 # RFID-Reader mit MQTT anbindung
-Dieses Device scant RFID-Chips und sendet den gespeicherten String an ein MQTT-Topic
+This device scans RFID-Chips and send the saved strings to a MQTT-Topic
 
 ## Hardware
  - NodeMCU (ESP8266/ESP-12E)
