@@ -15,5 +15,3 @@ If you have any questions, please contact intia[at]th-koeln.de.
 
 [Project description (german)](https://dites.web.th-koeln.de/forschung/projekte/intia/)
 
-
-![Alt-Text](https://www.romoe.com/de/app/media/resource/_jfzzulbj.deliver?&layout=240.jpg) ![Alt-Text](https://www.hzdr.de/db/Pic?pOid=46850)
