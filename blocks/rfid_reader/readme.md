@@ -1,5 +1,5 @@
 
-# RFID-Reader mit MQTT anbindung
+# RFID-Reader with MQTT
 This device scans RFID-Chips and send the saved strings to a MQTT-Topic
 
 ## Hardware
