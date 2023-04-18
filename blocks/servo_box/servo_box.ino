@@ -6,14 +6,16 @@
 #include <string.h>
 #include <ArduinoJson.h>
 
-const char* SSID = "intia";
-const char* PSK = "BuntesLicht10";
-const char* MQTT_BROKER = "intia.local";
-const char* TOPIC = "magischeschriftkiste/get"; // Toppic an das gesendet wird
-const char* CLIENT_ID ="KisteMagischeSchrift"; // Bitte für jeden ESP eine individuele ClientID festlegen
-char wiFiHostname[ ] = "KisteMagischeSchrift"; // Gerätename
+// Wifi
+#include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
+#include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 
-const char* TOPIC_SUB = "magischeschriftkiste/set"; // Topic das aboniert wird
+const char* MQTT_BROKER = "intia.local";
+const char* TOPIC = "intia/kiste"; // Toppic an das gesendet wird
+const char* CLIENT_ID ="Kiste"; // Bitte für jeden ESP eine individuele ClientID festlegen
+
+const char* TOPIC_SUB = "intia/kiste/set"; // Topic das aboniert wird
 //Wird an dieses Topic "open" gesendet so öffnet sich die Kiste. "close" zum schließen.
 
 
@@ -29,12 +31,29 @@ const int ledPin =  D2;      // LED-Pin
 
 
 void setup() {
+  //Testing connecting with onboard led
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);  
+  Serial.begin(115200);
+  WiFiManager wifiManager;
+  wifiManager.setHostname(CLIENT_ID);
+  //first parameter is name of access point, second is the password
+  wifiManager.autoConnect(CLIENT_ID);
+  Serial.println("Starting Box...");
+  /*
   pinMode(ledPin, OUTPUT);
   servo.attach(servoPin); //D4
-  servo.write(0);;
+  servo.write(98);
   Serial.begin(115200);
-
-  setup_wifi();
+  delay(1000);
+  servo.detach();
+ 
+  */
+  servo.attach(servoPin);
+  servo.write(96);
+  delay(1000);
+  servo.detach();
+  
   client.setServer(MQTT_BROKER, 1883);
   client.setCallback(callback);
 }
@@ -60,36 +79,25 @@ void callback(char* topic, byte* payload, unsigned int length) {
     digitalWrite(ledPin, LOW);
   }
   else if (strcmp(msg, "open") == 0) {
-    servo.write(768);
+  servo.attach(servoPin);
+    servo.write(288);
+  delay(1000);
+  servo.detach();
   }
   else if (strcmp(msg, "close") == 0) {
-    servo.write(98);
+  servo.attach(servoPin);
+    servo.write(96);
+  delay(1000);
+  servo.detach();
   }
   else {
     int val = strtol(msg, NULL, 16);
+  servo.attach(servoPin);
     Serial.println(val);
     servo.write(val);
+  delay(1000);
+  servo.detach();
   }
-}
-
-void setup_wifi() {
-  delay(10);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(SSID);
-
-  WiFi.begin(SSID, PSK);
-  wifi_station_set_hostname(wiFiHostname);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
 }
 
 void reconnect() {
@@ -107,9 +115,16 @@ void reconnect() {
 }
 
 void loop() {
+  //Testing connecting with onboard led
+    /*
+  digitalWrite(LED_BUILTIN, LOW);   // Turn the LED on by making the voltage LOW
+  delay(1000);                      // Wait for a second
+  digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
+  delay(2000);  
+
+  */
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
-
 }
